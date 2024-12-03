@@ -51,7 +51,7 @@ class KademliaProtocol(RPCProtocol):
         old_value = self.storage[key]
         if not old_value:
             log.error(f"Record {key} does not existsQ!")
-        is_authenticated_update = DIDSignatureVerifierHandler().handle_update_verification(value,old_value,auth_signature)
+        is_authenticated_update = self.signature_verifier_handler.handle_update_verification(value,old_value,auth_signature)
         
         if not is_authenticated_update:
             log.error("Unauthenticated Update")
@@ -72,7 +72,7 @@ class KademliaProtocol(RPCProtocol):
             log.error(f"record {key} already exists")
             return 
             
-        is_valid_signature = DIDSignatureVerifierHandler().handle_signature_verification(value)
+        is_valid_signature = self.signature_verifier_handler.handle_signature_verification(value)
         if not is_valid_signature:
             log.error("Invalid Signature")
             return False
