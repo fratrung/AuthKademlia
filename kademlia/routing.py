@@ -6,7 +6,8 @@ import asyncio
 from itertools import chain
 from collections import OrderedDict
 from kademlia.utils import shared_prefix, bytes_to_bit_string
-
+import logging
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 class KBucket:
     def __init__(self, rangeLower, rangeUpper, ksize, replacementNodeFactor=5):
@@ -96,7 +97,7 @@ class TableTraverser:
         self.left_buckets = table.buckets[:index]
         self.right_buckets = table.buckets[(index + 1):]
         self.left = True
-
+        
     def __iter__(self):
         return self
 
@@ -183,6 +184,7 @@ class RoutingTable:
         return None
 
     def find_neighbors(self, node, k=None, exclude=None):
+        log.debug("ENTRATO IN FIND NEIGHBORS")
         k = k or self.ksize
         nodes = []
         for neighbor in TableTraverser(self, node):
@@ -191,5 +193,4 @@ class RoutingTable:
                 heapq.heappush(nodes, (node.distance_to(neighbor), neighbor))
             if len(nodes) == k:
                 break
-
         return list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes)))

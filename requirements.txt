@@ -1,1 +1,4 @@
 rpcudp>=4.0.1
+pycryptodome == 3.14.1
+xoflib
+cryptography

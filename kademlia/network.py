@@ -12,6 +12,7 @@ from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
+from kademlia.auth_handler import SignatureVerifierHandler, DIDSignatureVerifierHandler
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -25,7 +26,7 @@ class Server:
 
     protocol_class = KademliaProtocol
 
-    def __init__(self, ksize=20, alpha=3, node_id=None, storage=None):
+    def __init__(self,signature_verifier_handler: SignatureVerifierHandler, ksize=20, alpha=3, node_id=None, storage=None):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -35,17 +36,35 @@ class Server:
             node_id: The id for this node on the network.
             storage: An instance that implements the interface
                      :class:`~kademlia.storage.IStorage`
+            signature_verifier_handler: A Class that handle the verification signature before storing and update operation
+                     :class:`~kademlia.auth_handler.SignatureVerifierHandler`
         """
         self.ksize = ksize
         self.alpha = alpha
-        self.storage = storage or ForgetfulStorage()
+        self.storage = storage or ForgetfulStorage(-1)
         self.node = Node(node_id or digest(random.getrandbits(255)))
         self.transport = None
         self.protocol = None
         self.refresh_loop = None
         self.save_state_loop = None
+        self.signature_verifier_handler = signature_verifier_handler
 
     def stop(self):
+        log.info("Stopping the server and notifying neighbors of node departure.")
+        # 1. Notifying neighbors of departure
+        tasks = []
+        if self.protocol:
+            neighbors = self.protocol.router.find_neighbors(self.node)
+            log.info(f"Notifying {len(neighbors)} neighbors of departure.")
+            for neighbor in neighbors:
+                tasks.append(self.protocol.call_leave(neighbor, self.node.id))
+
+        # 2. Execute all coroutine
+        loop = asyncio.get_event_loop()
+        if tasks:
+            loop.run_until_complete(asyncio.gather(*tasks))  
+            #loop.close()
+
         if self.transport is not None:
             self.transport.close()
 
@@ -56,7 +75,7 @@ class Server:
             self.save_state_loop.cancel()
 
     def _create_protocol(self):
-        return self.protocol_class(self.node, self.storage, self.ksize)
+        return self.protocol_class(self.node, self.storage, self.ksize,self.signature_verifier_handler)
 
     async def listen(self, port, interface='0.0.0.0'):
         """
@@ -153,11 +172,28 @@ class Server:
         spider = ValueSpiderCrawl(self.protocol, node, nearest,
                                   self.ksize, self.alpha)
         return await spider.find()
-
+    
+    
     async def set(self, key, value):
         """
         Set the given string key to the given value in the network.
         """
+        #Pezzo aggiunto
+        result = await self.get(key)
+        
+        if result:
+            log.error(f"record {key} already exists")
+            return None
+        
+        is_valid_signature = self.signature_verifier_handler.handle_signature_verification(value)
+        
+        if not is_valid_signature:
+            log.error("Invalid Signature")
+            return 
+        
+        log.debug("\n\nSIGNATURE VERIFIED (network.py)\n\n")
+        #Fine pezzo aggiunto 
+        
         if not check_dht_value_type(value):
             raise TypeError(
                 "Value must be of type int, float, bool, str, or bytes"
@@ -166,13 +202,52 @@ class Server:
         dkey = digest(key)
         return await self.set_digest(dkey, value)
 
+    async def update(self,key,value,auth_signature):
+        old_value = await self.get(key)
+        if not old_value:
+            log.error(f"record {key} does not exists")
+            return None
+        
+        is_authenticated_update = self.signature_verifier_handler.handle_update_verification(value,old_value,auth_signature)
+        if not is_authenticated_update:
+            log.error("Unauthenticated update operation")
+            return None
+        log.debug("\nAUTHENTICATED UPDATE!\n")
+        if not check_dht_value_type(value):
+            raise TypeError(
+                "Value must be of type int, float, bool, str, or bytes"
+            )
+        log.info("setting '%s' = '%s' on network", key, value)
+        dkey = digest(key)
+        return await self.update_digest(dkey, value,auth_signature)
+    
+    
+    async def update_digest(self,dkey,value, auth_signature):
+        node = Node(dkey)
+        nearest = self.protocol.router.find_neighbors(node)
+        if not nearest:
+            log.warning("There are no known neighbors to set key %s",
+                        dkey.hex())
+            return False
+        
+        spider = NodeSpiderCrawl(self.protocol, node, nearest,
+                                 self.ksize, self.alpha)
+        nodes = await spider.find()
+        log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
+        biggest = max([n.distance_to(node) for n in nodes])
+        if self.node.distance_to(node) < biggest:
+            self.storage[dkey] = value
+        results = [self.protocol.call_update(n, dkey, value,auth_signature) for n in nodes]
+        # return true only if at least one update call succeeded
+        return any(await asyncio.gather(*results))
+        
+        
     async def set_digest(self, dkey, value):
         """
         Set the given SHA1 digest key (bytes) to the given value in the
         network.
         """
         node = Node(dkey)
-
         nearest = self.protocol.router.find_neighbors(node)
         if not nearest:
             log.warning("There are no known neighbors to set key %s",
@@ -243,7 +318,7 @@ class Server:
                                                fname,
                                                frequency)
 
-
+    
 def check_dht_value_type(value):
     """
     Checks to see if the type of the value is a valid type for
