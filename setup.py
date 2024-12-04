@@ -14,6 +14,10 @@ setup(
     url="http://github.com/bmuller/kademlia",
     packages=find_packages(),
     install_requires=open("requirements.txt").readlines(),
+    dependency_links=[
+        "git+https://github.com/GiacomoPope/dilithium-py.git",
+        "git+https://github.com/GiacomoPope/kyber-py.git",
+    ],
     classifiers=[
       "Development Status :: 5 - Production/Stable",
       "Intended Audience :: Developers",

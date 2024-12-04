@@ -2,5 +2,4 @@ rpcudp>=4.0.1
 pycryptodome == 3.14.1
 xoflib
 cryptography
-git+https://github.com/GiacomoPope/dilithium-py.git
-git+https://github.com/GiacomoPope/kyber-py.git
+

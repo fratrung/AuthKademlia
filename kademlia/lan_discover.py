@@ -2,9 +2,10 @@ import socket
 from abc import abstractmethod
 import asyncio
 
-class BroadcastLANDiscover():
+class LANDiscover():
     
     @abstractmethod
+    
     async def discover_peers(port,timeout=2):
         message = b"Kademlia Bootstrap"
         broadcast_ip = "255.255.255.255" 
@@ -38,9 +39,6 @@ class BroadcastLANDiscover():
             sock.close()
 
         return peers
-
-
-class BroadcastLANResponder():
     
     @staticmethod
     async def listen_broadcast(broadcast_port,response):
