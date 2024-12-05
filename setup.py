@@ -8,10 +8,10 @@ setup(
     description="Kademlia is a distributed hash table for decentralized peer-to-peer computer networks.",
     long_description=open("README.md", encoding='utf-8').read(),
     long_description_content_type='text/markdown',
-    author="Brian Muller",
-    author_email="bamuller@gmail.com",
+    author="Francesco Trungadi",
+    author_email="francesco.trung@gmail.com",
     license="MIT",
-    url="http://github.com/bmuller/kademlia",
+    url="https://github.com/fratrung/AuthKademlia",
     packages=find_packages(),
     install_requires=open("requirements.txt").readlines(),
     dependency_links=[
