@@ -49,7 +49,7 @@ class Server:
         self.save_state_loop = None
         self.signature_verifier_handler = signature_verifier_handler
 
-    def stop(self):
+    async def stop(self):
         log.info("Stopping the server and notifying neighbors of node departure.")
         # 1. Notifying neighbors of departure
         tasks = []
@@ -60,10 +60,11 @@ class Server:
                 tasks.append(self.protocol.call_leave(neighbor, self.node.id))
 
         # 2. Execute all coroutine
-        loop = asyncio.get_event_loop()
+        #loop = asyncio.get_event_loop()
         if tasks:
-            loop.run_until_complete(asyncio.gather(*tasks))  
+            #loop.run_until_complete(asyncio.gather(*tasks))  
             #loop.close()
+            await asyncio.gather(*tasks)
 
         if self.transport is not None:
             self.transport.close()

@@ -32,7 +32,7 @@ def run_node(dht_port:int,bootstrap_nodes=None):
     except KeyboardInterrupt:
         print("\nShutting down node...")
     finally:
-        node.stop()
+        loop.run_until_complete(node.stop())
         loop.close()
         log.info("Node stopped")
         

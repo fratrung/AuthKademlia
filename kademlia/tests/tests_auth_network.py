@@ -72,7 +72,7 @@ def create_did_record():
 
 def test_insert_record():
     key, value, sk = create_did_record()
-    bootstrap_nodes = [("127.0.0.1", 8007), ("127.0.0.1", 8008)]
+    bootstrap_nodes = [("127.0.0.1", 8009), ("127.0.0.1", 8008)]
     node = Server(signature_verifier_handler=DIDSignatureVerifierHandler())
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -103,7 +103,7 @@ def test_insert_record():
 
     #    print(f"\n\n Failure: {failure}")
     finally:
-        node.stop()
+        loop.run_until_complete(node.stop())
         loop.close()
         log.info("Node stopped")
   
@@ -129,26 +129,26 @@ def test_existing_dht_auth_network():
     except KeyboardInterrupt or asyncio.CancelledError:
         print("\nShutting down node...")
     finally:
-        node.stop()
+        loop.run_until_complete(node.stop())
         loop.close()
         log.info("Node stopped")
     
-def test_get_record(bootstrap_nodes= [("127.0.0.1",8008),("127.0.0.1",8007)]):
+def test_get_record(bootstrap_nodes= [("127.0.0.1",8008),("127.0.0.1",8009)]):
     node = Server(signature_verifier_handler=DIDSignatureVerifierHandler())
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(node.listen(8001))
     loop.run_until_complete(node.bootstrap(bootstrap_nodes))
     try:
-        result = loop.run_until_complete(node.get("ca2a12f0-c379-42da-90fe-8a3b63d67f42")) 
+        result = loop.run_until_complete(node.get("efc226eb-23bd-4835-9aa4-66c9e3b12846")) 
         print(f"RESULT:\n {result}")
     finally:
-        node.stop()
+        loop.run_until_complete(node.stop())
         loop.close()
         
 def test_key_rotation(bootstrap_nodes = [("127.0.0.1",8007),("127.0.0.1",8008),("127.0.0.1",8009)]):
     key, value, sk = create_did_record()
-    bootstrap_nodes = [("127.0.0.1", 8007), ("127.0.0.1", 8008)]
+    bootstrap_nodes = [("127.0.0.1", 8009), ("127.0.0.1", 8008)]
     node = Server(signature_verifier_handler=DIDSignatureVerifierHandler())
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -203,7 +203,7 @@ def test_key_rotation(bootstrap_nodes = [("127.0.0.1",8007),("127.0.0.1",8008),(
         print(f"\n\nNEW DID DOCUMENT: \n{json.dumps(new_did_doc,indent=4)}")
         
     finally:
-        node.stop()
+        loop.run_until_complete(node.stop())
         loop.close()
         log.info("Node stopped")     
         
@@ -211,5 +211,5 @@ def test_key_rotation(bootstrap_nodes = [("127.0.0.1",8007),("127.0.0.1",8008),(
 #test_existing_dht_auth_network()
 #test_insert_record()
 
-test_get_record()
-#test_key_rotation()
+#test_get_record()
+test_key_rotation()

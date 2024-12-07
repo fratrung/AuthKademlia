@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import base64
 from typing import Tuple, Dict, Any
-from kademlia.crypto.dilithium_py.src.dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
+from dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
 
 def b64encode_key(key):
     return base64.urlsafe_b64encode(key).decode('utf-8').rstrip("=")
