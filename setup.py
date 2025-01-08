@@ -17,6 +17,7 @@ setup(
     dependency_links=[
         "git+https://github.com/GiacomoPope/dilithium-py.git",
         "git+https://github.com/GiacomoPope/kyber-py.git",
+        "git+https://github.com/fratrung/rpcudp.git"
     ],
     classifiers=[
       "Development Status :: 5 - Production/Stable",
