@@ -1,4 +1,4 @@
 pycryptodome == 3.14.1
 xoflib
 cryptography
-
+git+https://github.com/fratrung/rpcudp.git

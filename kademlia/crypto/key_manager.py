@@ -3,6 +3,7 @@ import os
 import base64
 from typing import Tuple, Dict, Any
 from dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
+from kyber_py.kyber import Kyber1024, Kyber512, Kyber768
 
 def b64encode_key(key):
     return base64.urlsafe_b64encode(key).decode('utf-8').rstrip("=")
@@ -103,34 +104,7 @@ class KeyManager(ABC):
         """
         pass
     
-    @abstractmethod
-    def sign(private_key: bytes, message,) -> bytes:
-        """
-        Sign a message using the provided private key.
-        
-        Parameters:
-        private_key (bytes): The private key data.
-        message (bytes): The message to be signed.
-        
-        Returns:
-        bytes: The signature.
-        """
-        pass
-    
-    @abstractmethod
-    def verify_signature(public_key:bytes,message: bytes, signature: bytes) -> bool:
-        """
-        Verify a message signature using the provided public key.
-        
-        Parameters:
-        public_key (bytes): The public key data.
-        message (bytes): The message to be verified.
-        signature (bytes): The signature to be verified.
-        
-        Returns:
-        bool: True if the signature is valid, False otherwise.
-        """
-        pass
+   
     @abstractmethod
     def get_jose_format() -> dict:
         """
@@ -211,7 +185,52 @@ class DilithiumKeyManager(KeyManager):
             "x":base64_public_key
         }
         
-        
+class KyberKeyManager(KeyManager):
+    """
+    Concrete implementation of KeyManager for Kyber keys.
+    """
+    def generate_keypair(self, security_level: int) -> Tuple[bytes, bytes]:
+        self.security_level = security_level
+        if security_level == 512:
+            return Kyber512.keygen()
+        elif security_level == 768:
+            return Kyber768.keygen()
+        elif security_level == 1024:
+            return Kyber1024.keygen()
+        else:
+            return None, None
+
+    def store_public_key(self, key_name: str, public_key: bytes) -> None:
+        public_key_path = os.path.join(self.keys_dir, f"{key_name}.public")
+        with open(public_key_path, "wb") as f:
+            f.write(public_key)
+
+    def store_private_key(self, key_name: str, private_key: bytes) -> None:
+        private_key_path = os.path.join(self.keys_dir, f"{key_name}.private")
+        with open(private_key_path, "wb") as f:
+            f.write(private_key)
+
+    def get_public_key(self, key_name: str) -> bytes:
+        public_key_path = os.path.join(self.keys_dir, f"{key_name}.public")
+        with open(public_key_path, "rb") as f:
+            return f.read()
+
+    def get_private_key(self, key_name: str) -> bytes:
+        private_key_path = os.path.join(self.keys_dir, f"{key_name}.private")
+        with open(private_key_path, "rb") as f:
+            return f.read()
+
+
+    def get_jose_format(self, public_key: bytes, security_level: int) -> Dict[str, Any]:
+        if security_level not in (2, 3, 5):
+            return None
+        base64_public_key = b64encode_key(public_key)
+        return {
+            "kty": "KEM",
+            "alg": f"KYBER{security_level}",
+            "x": base64_public_key
+        }
+  
 class Ed25519KeyManager(KeyManager):
     
     def generate_keypair(self) -> Tuple[bytes]:
