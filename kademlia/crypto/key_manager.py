@@ -2,8 +2,12 @@ from abc import ABC, abstractmethod
 import os
 import base64
 from typing import Tuple, Dict, Any
-from dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
-from kyber_py.kyber import Kyber1024, Kyber512, Kyber768
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'dilithium'))
+from dilithium import Dilithium2, Dilithium3, Dilithium5
+from dilithium import Dilithium2, Dilithium3, Dilithium5
+from kyber.src.kyber_py.kyber.default_parameters import Kyber512, Kyber1024, Kyber768
 
 def b64encode_key(key):
     return base64.urlsafe_b64encode(key).decode('utf-8').rstrip("=")

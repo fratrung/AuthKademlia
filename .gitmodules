@@ -1,0 +1,6 @@
+[submodule "kademlia/crypto/dilithium"]
+	path = kademlia/crypto/dilithium
+	url = https://github.com/GiacomoPope/dilithium-py.git
+[submodule "kademlia/crypto/kyber"]
+	path = kademlia/crypto/kyber
+	url = https://github.com/GiacomoPope/kyber-py.git
