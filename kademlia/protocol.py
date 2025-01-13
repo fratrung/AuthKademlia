@@ -3,7 +3,7 @@ import asyncio
 import logging
 import zlib
 
-from rpcudp.protocol import RPCProtocol
+from rpcudp.rpcudp.protocol import RPCProtocol
 
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
