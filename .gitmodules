@@ -4,3 +4,6 @@
 [submodule "kademlia/crypto/kyber"]
 	path = kademlia/crypto/kyber
 	url = https://github.com/GiacomoPope/kyber-py.git
+[submodule "kademlia/rpcudp"]
+	path = kademlia/rpcudp
+	url = https://github.com/fratrung/rpcudp
