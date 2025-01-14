@@ -1,7 +1,8 @@
 from kademlia.crypto.signature_verifier import SignatureVerifier
 from kademlia.crypto.signer import Signer
-#from kademlia.crypto.dilithium_py.src.dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
-from dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
+#from dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
+from dilithium.src.dilithium_py.dilithium.default_parameters import Dilithium2, Dilithium3, Dilithium5
+
 
 LENGTH_SECURITY_LEVEL ={
     (1312, 2528): 2,

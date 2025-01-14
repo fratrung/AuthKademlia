@@ -5,8 +5,8 @@ from typing import Tuple, Dict, Any
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'dilithium'))
-from dilithium import Dilithium2, Dilithium3, Dilithium5
-from dilithium import Dilithium2, Dilithium3, Dilithium5
+
+from dilithium.src.dilithium_py.dilithium.default_parameters import Dilithium2, Dilithium3, Dilithium5
 from kyber.src.kyber_py.kyber.default_parameters import Kyber512, Kyber1024, Kyber768
 
 def b64encode_key(key):
@@ -238,6 +238,8 @@ class KyberKeyManager(KeyManager):
 class Ed25519KeyManager(KeyManager):
     
     def generate_keypair(self) -> Tuple[bytes]:
-        return None
+        pass
+    
+
     
     

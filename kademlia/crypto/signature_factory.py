@@ -4,7 +4,7 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(project_root)
 
 from kademlia.crypto.rsa import RSASignatureVerifier, RSASigner
-from kademlia.crypto.dilithium import DilithiumSignatureVerifier, DilithiumSigner
+from AuthKademlia.kademlia.crypto.dilithium_signature import DilithiumSignatureVerifier, DilithiumSigner
 from kademlia.crypto.ed25519 import Ed25519SignatureVerifier, Ed25519Signer
 from kademlia.crypto.signature_verifier import SignatureVerifier
 from kademlia.crypto.signer import Signer
