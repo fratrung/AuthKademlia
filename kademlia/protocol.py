@@ -3,7 +3,11 @@ import asyncio
 import logging
 import zlib
 
-from rpcudp.rpcudp.protocol import RPCProtocol
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+from kademlia.rpcudp.rpcudp.protocol import RPCProtocol
 
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
