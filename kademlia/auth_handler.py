@@ -1,5 +1,5 @@
 from kademlia.crypto.signature_factory import SignatureVerifierFactory
-from kademlia.crypto.signature_verifier import SIGNATURE_ALG_LENGHTS
+from kademlia.crypto.signature_verifier import SIGNATURE_ALG_LENGTHS
 from abc import ABC, abstractmethod
 import json
 import base64
@@ -31,15 +31,15 @@ class DIDSignatureVerifierHandler(SignatureVerifierHandler):
         if len(data_string) > 1:
             dilithium_security_level = data_string[1]
         
-        if not alg in SIGNATURE_ALG_LENGHTS:
+        if not alg in SIGNATURE_ALG_LENGTHS:
             print(f"Unsupported signature algorithm: {alg}")
             return None
         
         if dilithium_security_level:
-            length = SIGNATURE_ALG_LENGHTS[alg][int(dilithium_security_level)]
+            length = SIGNATURE_ALG_LENGTHS[alg][int(dilithium_security_level)]
             return alg, length
         
-        length = SIGNATURE_ALG_LENGHTS[alg]
+        length = SIGNATURE_ALG_LENGTHS[alg]
         return alg, length
     
     
@@ -112,15 +112,15 @@ class GenericSignatureVerifierHandler(SignatureVerifierHandler):
         if len(data_string) > 1:
             dilithium_security_level = data_string[1]
         
-        if not alg in SIGNATURE_ALG_LENGHTS:
+        if not alg in SIGNATURE_ALG_LENGTHS:
             print(f"Unsupported signature algorithm: {alg}")
             return None
         
         if dilithium_security_level:
-            length = SIGNATURE_ALG_LENGHTS[alg][int(dilithium_security_level)]
+            length = SIGNATURE_ALG_LENGTHS[alg][int(dilithium_security_level)]
             return alg, length
         
-        length = SIGNATURE_ALG_LENGHTS[alg]
+        length = SIGNATURE_ALG_LENGTHS[alg]
         return alg, length
     
     def handle_signature_verification(self,value):

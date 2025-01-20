@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-SIGNATURE_ALG_LENGHTS = {
+SIGNATURE_ALG_LENGTHS = {
     "RSA": 256,
     "Dilithium": {
         2: 2420,
