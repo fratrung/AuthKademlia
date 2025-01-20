@@ -1,6 +1,5 @@
 from kademlia.crypto.signature_verifier import SignatureVerifier
 from kademlia.crypto.signer import Signer
-#from dilithium_py.dilithium import Dilithium2, Dilithium3, Dilithium5
 from dilithium.src.dilithium_py.dilithium.default_parameters import Dilithium2, Dilithium3, Dilithium5
 
 

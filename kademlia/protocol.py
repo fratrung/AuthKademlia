@@ -12,7 +12,7 @@ from kademlia.rpcudp.rpcudp.protocol import RPCProtocol
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
 from kademlia.utils import digest
-from kademlia.auth_handler import  SignatureVerifierHandler, DIDSignatureVerifierHandler
+from kademlia.auth_handler import  SignatureVerifierHandler
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -44,14 +44,6 @@ class KademliaProtocol(RPCProtocol):
         return self.source_node.id
     
     def rpc_update(self,sender,nodeid,key,value,auth_signature):
-        
-        #try:
-        #    value = zlib.decompress(compressed_value)
-        #    auth_signature = zlib.decompress(compressed_auth_signature)  
-        #except zlib.error as e:
-        #    log.error("Errore nella decompressione dei dati: %s", e)
-        #    return False
-        
         old_value = self.storage[key]
         if not old_value:
             log.error(f"Record {key} does not existsQ!")
@@ -129,11 +121,6 @@ class KademliaProtocol(RPCProtocol):
         return self.handle_call_response(result, node_to_ask)
     
     async def call_update(self,node_to_ask,key,value,auth_signature):
-        
-        #compressed_value = zlib.compress(value) 
-        #compressed_auth_signature = zlib.compress(auth_signature)
-        
-        #print(len(compressed_value+compressed_auth_signature))
         address = (node_to_ask.ip, node_to_ask.port)
         result = await self.update(address,self.source_node.id,key,value,auth_signature)
         return self.handle_call_response(result, node_to_ask)
@@ -194,7 +181,7 @@ class KademliaProtocol(RPCProtocol):
         source = Node(nodeid, sender[0], sender[1])
         self.router.remove_contact(source)
         
-        # 3. Optionally notify neighbors that this node is leaving (broadcasting leave)
+        # Optionally notify neighbors that this node is leaving (broadcasting leave)
         #for neighbor in self.router.buckets:
         #    for n in neighbor.get_nodes():
         #        asyncio.ensure_future(self.call_leave(n, nodeid))

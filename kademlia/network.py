@@ -12,7 +12,7 @@ from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
-from kademlia.auth_handler import SignatureVerifierHandler, DIDSignatureVerifierHandler
+from kademlia.auth_handler import SignatureVerifierHandler
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
