@@ -1,3 +1,4 @@
 pycryptodome == 3.14.1
 xoflib
 cryptography
+u-msgpack-python>=2.6

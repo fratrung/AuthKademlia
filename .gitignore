@@ -9,4 +9,5 @@ kademlia.egg-info
 docs/_build
 .coverage
 .coverage.*
-env
+env/
+*.pytest_cache

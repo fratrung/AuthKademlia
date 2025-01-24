@@ -4,10 +4,10 @@ import base64
 from typing import Tuple, Dict, Any
 import os
 import sys
-#sys.path.append(os.path.join(os.path.dirname(__file__),'dilithium'))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from .dilithium.src.dilithium_py.dilithium.default_parameters import Dilithium2, Dilithium3, Dilithium5
+from .kyber.src.kyber_py.kyber.default_parameters import Kyber512, Kyber1024, Kyber768
 
-from dilithium.src.dilithium_py.dilithium.default_parameters import Dilithium2, Dilithium3, Dilithium5
-from kyber.src.kyber_py.kyber.default_parameters import Kyber512, Kyber1024, Kyber768
 
 def b64encode_key(key):
     return base64.urlsafe_b64encode(key).decode('utf-8').rstrip("=")
