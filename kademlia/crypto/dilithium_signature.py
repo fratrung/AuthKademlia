@@ -14,7 +14,7 @@ class DilithiumSignatureVerifier(SignatureVerifier):
     
     @staticmethod
     def verify(public_key: bytes,signature: bytes ,message) -> bool:
-        print(f"public_key length: {len(public_key)}")
+        #print(f"public_key length: {len(public_key)}")
         security_level = None
         for key_length, sec_level in LENGTH_SECURITY_LEVEL.items():
            if key_length[0] == len(public_key):
