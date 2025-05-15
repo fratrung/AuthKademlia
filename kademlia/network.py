@@ -51,7 +51,7 @@ class Server:
 
     async def stop(self):
         log.info("Stopping the server and notifying neighbors of node departure.")
-        # 1. Notifying neighbors of departure
+        # Notifying neighbors of departure
         tasks = []
         if self.protocol:
             neighbors = self.protocol.router.find_neighbors(self.node)
@@ -59,8 +59,6 @@ class Server:
             for neighbor in neighbors:
                 tasks.append(self.protocol.call_leave(neighbor, self.node.id))
 
-        # 2. Execute all coroutine
-        #loop = asyncio.get_event_loop()
         if tasks:
             #loop.run_until_complete(asyncio.gather(*tasks))  
             #loop.close()
@@ -179,7 +177,6 @@ class Server:
         """
         Set the given string key to the given value in the network.
         """
-        #Pezzo aggiunto
         result = await self.get(key)
         
         if result:
@@ -191,9 +188,7 @@ class Server:
         if not is_valid_signature:
             log.error("Invalid Signature")
             return 
-        
-        log.debug("\n\nSIGNATURE VERIFIED (network.py)\n\n")
-        #Fine pezzo aggiunto 
+        log.debug("\n\nSIGNATURE VERIFIED\n\n")
         
         if not check_dht_value_type(value):
             raise TypeError(
@@ -222,6 +217,54 @@ class Server:
         dkey = digest(key)
         return await self.update_digest(dkey, value,auth_signature)
     
+    # DELETE API ---------------------------------------------------------------------------------------------------------------------
+    async def delete(self, key, value, auth_signature, msg):
+        """
+        Delete record from DHT in authenticated way
+        """
+        result = await self.get(key)
+        
+        if not result:
+            log.error(f"record {key} not exists")
+            return None
+        
+        is_valid_signature = self.signature_verifier_handler.handle_signature_delete_operation(value,auth_signature,msg)
+        
+        if not is_valid_signature:
+            log.error("Invalid Signature")
+            return None
+        
+        log.debug("\n\n Delete operation Verified (network.py)\n\n")
+        if not check_dht_value_type(value):
+            raise TypeError(
+                "Value must be of type int, float, bool, str, or bytes"
+            )
+        log.info("setting '%s' = '%s' on network", key, value)
+        dkey = digest(key)
+        return await self.delete_digest(dkey, value, auth_signature, msg)
+    
+    
+    async def delete_digest(self, dkey, value, auth_signature, delete_msg):
+        node = Node(dkey)
+        nearest = self.protocol.router.find_neighbors(node)
+        if not nearest:
+            log.warning("There are no known neighbors to delete key %s",
+                        dkey.hex())
+            return False
+
+        spider = NodeSpiderCrawl(self.protocol, node, nearest,
+                                 self.ksize, self.alpha)
+        nodes = await spider.find()
+        log.info("deleting '%s' on %s", dkey.hex(), list(map(str, nodes)))
+
+        biggest = max([n.distance_to(node) for n in nodes])
+        if self.node.distance_to(node) < biggest:
+            if dkey in self.storage:
+                 del self.storage[dkey] 
+        results = [self.protocol.call_delete(n, dkey, value, auth_signature, delete_msg) for n in nodes]
+        return any(await asyncio.gather(*results))
+
+    # ---------------------------------------------------------------------------------------------------------------------------------------------------
     
     async def update_digest(self,dkey,value, auth_signature):
         node = Node(dkey)

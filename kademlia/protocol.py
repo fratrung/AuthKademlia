@@ -80,6 +80,28 @@ class KademliaProtocol(RPCProtocol):
                   sender, key.hex(), value)
         self.storage[key] = value
         return True
+    
+    def rpc_delete(self, sender, nodeid, key, value, auth_signature, delete_msg):
+        
+        result = self.storage.get(key)
+        if not result:
+            log.error(f"record {key} not exists in local hash table")
+            return False 
+            
+        is_valid_signature = self.signature_verifier_handler.handle_signature_delete_operation(value, auth_signature, delete_msg)
+        if not is_valid_signature:
+            log.error("Invalid Signature")
+            return False
+        print("\n\nDelete operation VERIFIED (protocol.py)\n\n")
+        
+        source = Node(nodeid, sender[0], sender[1])
+        self.welcome_if_new(source)
+        log.debug("got a delete request from %s, deleting '%s'='%s'",
+                  sender, key.hex(), value)
+        if self.storage.get(key):
+             del self.storage[key] 
+             return True
+        return False
 
     def rpc_find_node(self, sender, nodeid, key):
         log.info("finding neighbors of %i in local table",
@@ -123,6 +145,11 @@ class KademliaProtocol(RPCProtocol):
     async def call_update(self,node_to_ask,key,value,auth_signature):
         address = (node_to_ask.ip, node_to_ask.port)
         result = await self.update(address,self.source_node.id,key,value,auth_signature)
+        return self.handle_call_response(result, node_to_ask)
+    
+    async def call_delete(self, node_to_ask, key, value, auth_signature, delete_msg):
+        address = (node_to_ask.ip, node_to_ask.port)
+        result = await self.delete(address, self.source_node.id, key, value, auth_signature, delete_msg)
         return self.handle_call_response(result, node_to_ask)
     
     def welcome_if_new(self, node):

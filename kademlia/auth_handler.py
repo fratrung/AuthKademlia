@@ -93,6 +93,21 @@ class DIDSignatureVerifierHandler(SignatureVerifierHandler):
             return False
         return self.handle_signature_verification(value)
     
+    
+    def handle_signature_delete_operation(self, value, auth_signature, delete_msg):
+        algorithm_string = self.get_alg_string(value)
+        alg_param, length_param = self.handle_signature_algorithm_type(algorithm_string)
+        data = value[(12 + length_param):]
+        did_document = json.loads(data.decode('utf-8'))
+        verification_method0 = did_document['verificationMethod'][0]
+        public_key = verification_method0['publicKeyJwk']['x']
+        
+        pub_key_bytes = self.decode_b64(public_key)
+        
+        signature_verifier = self.factory_verifier.get_verifier(algorithm_string)
+        is_valid_signature = signature_verifier.verify(pub_key_bytes,auth_signature,delete_msg) 
+        return is_valid_signature
+    
         
         
     
