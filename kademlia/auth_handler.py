@@ -17,6 +17,9 @@ class SignatureVerifierHandler():
     def handle_update_verification(value,old_value,auth_signature):
         pass
     
+    @abstractmethod
+    def handle_signature_delete_operation(value,auth_signature,delete_msg):
+        pass
     
 class DIDSignatureVerifierHandler(SignatureVerifierHandler):
     

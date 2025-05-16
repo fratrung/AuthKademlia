@@ -218,13 +218,13 @@ class Server:
         return await self.update_digest(dkey, value,auth_signature)
     
     # DELETE API ---------------------------------------------------------------------------------------------------------------------
-    async def delete(self, key, value, auth_signature, msg):
+    async def delete(self, key, auth_signature, msg):
         """
         Delete record from DHT in authenticated way
         """
-        result = await self.get(key)
+        value = await self.get(key)
         
-        if not result:
+        if not value:
             log.error(f"record {key} not exists")
             return None
         
@@ -241,10 +241,10 @@ class Server:
             )
         log.info("setting '%s' = '%s' on network", key, value)
         dkey = digest(key)
-        return await self.delete_digest(dkey, value, auth_signature, msg)
+        return await self.delete_digest(dkey, auth_signature, msg)
     
     
-    async def delete_digest(self, dkey, value, auth_signature, delete_msg):
+    async def delete_digest(self, dkey, auth_signature, delete_msg):
         node = Node(dkey)
         nearest = self.protocol.router.find_neighbors(node)
         if not nearest:
@@ -261,7 +261,7 @@ class Server:
         if self.node.distance_to(node) < biggest:
             if dkey in self.storage:
                  del self.storage[dkey] 
-        results = [self.protocol.call_delete(n, dkey, value, auth_signature, delete_msg) for n in nodes]
+        results = [self.protocol.call_delete(n, dkey, auth_signature, delete_msg) for n in nodes]
         return any(await asyncio.gather(*results))
 
     # ---------------------------------------------------------------------------------------------------------------------------------------------------

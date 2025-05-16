@@ -81,10 +81,10 @@ class KademliaProtocol(RPCProtocol):
         self.storage[key] = value
         return True
     
-    def rpc_delete(self, sender, nodeid, key, value, auth_signature, delete_msg):
+    def rpc_delete(self, sender, nodeid, key, auth_signature, delete_msg):
         
-        result = self.storage.get(key)
-        if not result:
+        value = self.storage.get(key)
+        if not value:
             log.error(f"record {key} not exists in local hash table")
             return False 
             
@@ -147,9 +147,9 @@ class KademliaProtocol(RPCProtocol):
         result = await self.update(address,self.source_node.id,key,value,auth_signature)
         return self.handle_call_response(result, node_to_ask)
     
-    async def call_delete(self, node_to_ask, key, value, auth_signature, delete_msg):
+    async def call_delete(self, node_to_ask, key, auth_signature, delete_msg):
         address = (node_to_ask.ip, node_to_ask.port)
-        result = await self.delete(address, self.source_node.id, key, value, auth_signature, delete_msg)
+        result = await self.delete(address, self.source_node.id, key, auth_signature, delete_msg)
         return self.handle_call_response(result, node_to_ask)
     
     def welcome_if_new(self, node):
