@@ -260,7 +260,7 @@ class Server:
         biggest = max([n.distance_to(node) for n in nodes])
         if self.node.distance_to(node) < biggest:
             if dkey in self.storage:
-                 self.storage[dkey] = None
+                 self.storage.delete(dkey)
         results = [self.protocol.call_delete(n, dkey, auth_signature, delete_msg) for n in nodes]
         return any(await asyncio.gather(*results))
 

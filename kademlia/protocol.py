@@ -99,7 +99,7 @@ class KademliaProtocol(RPCProtocol):
         log.debug("got a delete request from %s, deleting '%s'='%s'",
                   sender, key.hex(), value)
         if self.storage.get(key):
-             self.storage[key] = None
+             self.storage.delete(key)
              return True
         return False
 
