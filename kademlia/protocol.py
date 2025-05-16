@@ -98,10 +98,8 @@ class KademliaProtocol(RPCProtocol):
         self.welcome_if_new(source)
         log.debug("got a delete request from %s, deleting '%s'='%s'",
                   sender, key.hex(), value)
-        if self.storage.get(key):
-             self.storage.delete(key)
-             return True
-        return False
+        self.storage.delete(key)
+        return True
 
     def rpc_find_node(self, sender, nodeid, key):
         log.info("finding neighbors of %i in local table",

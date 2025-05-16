@@ -72,6 +72,11 @@ class ForgetfulStorage(IStorage):
         self.cull()
         if key in self.data:
             self.data.pop(key,None)
+    
+    def delete(self,key):
+        self.cull()
+        if key in self.data:
+            self.data.pop(key,None)
 
     def __getitem__(self, key):
         self.cull()

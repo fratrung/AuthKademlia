@@ -239,7 +239,7 @@ class Server:
             raise TypeError(
                 "Value must be of type int, float, bool, str, or bytes"
             )
-        log.info("setting '%s' = '%s' on network", key, value)
+        log.info("deleting '%s' = '%s' on network", key, value)
         dkey = digest(key)
         return await self.delete_digest(dkey, auth_signature, msg)
     
@@ -257,10 +257,7 @@ class Server:
         nodes = await spider.find()
         log.info("deleting '%s' on %s", dkey.hex(), list(map(str, nodes)))
 
-        biggest = max([n.distance_to(node) for n in nodes])
-        if self.node.distance_to(node) < biggest:
-            if dkey in self.storage:
-                 self.storage.delete(dkey)
+        self.storage.delete(dkey)        
         results = [self.protocol.call_delete(n, dkey, auth_signature, delete_msg) for n in nodes]
         return any(await asyncio.gather(*results))
 
