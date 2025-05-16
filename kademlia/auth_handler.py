@@ -107,39 +107,7 @@ class DIDSignatureVerifierHandler(SignatureVerifierHandler):
         signature_verifier = self.factory_verifier.get_verifier(algorithm_string)
         is_valid_signature = signature_verifier.verify(pub_key_bytes,auth_signature,delete_msg) 
         return is_valid_signature
-    
-        
-        
-    
-    
-    
 
-class GenericSignatureVerifierHandler(SignatureVerifierHandler):
-    
-    def __init__(self):
-        super().__init__()
-    
-    def handle_signature_algorithm_type(self,algorithm: str) -> tuple:
-        data_string = algorithm.split("-")
-        alg = data_string[0]
-        dilithium_security_level = None
-        length = None
-        if len(data_string) > 1:
-            dilithium_security_level = data_string[1]
-        
-        if not alg in SIGNATURE_ALG_LENGTHS:
-            print(f"Unsupported signature algorithm: {alg}")
-            return None
-        
-        if dilithium_security_level:
-            length = SIGNATURE_ALG_LENGTHS[alg][int(dilithium_security_level)]
-            return alg, length
-        
-        length = SIGNATURE_ALG_LENGTHS[alg]
-        return alg, length
-    
-    def handle_signature_verification(self,value):
-        pass
     
     
 
