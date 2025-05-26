@@ -162,6 +162,10 @@ class Server:
         dkey = digest(key)
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
+            result = self.storage.get(dkey)
+            is_verified = self.signature_verifier_handler.handle_signature_verification(result) # for eventually injected fake record
+            if not is_verified:
+                return None
             return self.storage.get(dkey)
         node = Node(dkey)
         nearest = self.protocol.router.find_neighbors(node)
@@ -170,7 +174,13 @@ class Server:
             return None
         spider = ValueSpiderCrawl(self.protocol, node, nearest,
                                   self.ksize, self.alpha)
-        return await spider.find()
+        result = await spider.find()
+        if result is not None :
+            is_verified = self.signature_verifier_handler.handle_signature_verification(result)
+            if is_verified:
+                return result
+        return None
+        #return await spider.find()
     
     
     async def set(self, key, value):
