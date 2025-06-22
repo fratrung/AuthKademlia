@@ -3,6 +3,7 @@ from kademlia.crypto.signature_verifier import SIGNATURE_ALG_LENGTHS
 from abc import ABC, abstractmethod
 import json
 import base64
+from pathlib import Path
 
 class SignatureVerifierHandler():
     
@@ -19,6 +20,10 @@ class SignatureVerifierHandler():
     
     @abstractmethod
     def handle_signature_delete_operation(value,auth_signature,delete_msg):
+        pass
+    
+    @abstractmethod
+    def handle_issuer_node_signature_verification(value):
         pass
     
 class DIDSignatureVerifierHandler(SignatureVerifierHandler):
@@ -78,9 +83,37 @@ class DIDSignatureVerifierHandler(SignatureVerifierHandler):
         return is_valid_signature
     
     
+    
+    def _load_issuer_node_dilithium_public_key(self):  
+        key_path = Path(__file__).resolve().parents[3]/ "issuer_node_public_key.txt" # hardcoded 
+        with open(key_path,"rb") as f:
+            return f.read()
+    
+    
+    def handle_issuer_node_signature_verification(self,value): # da testare
+        algorithm_string = self.get_alg_string(value)
+        alg_param, length_param = self.handle_signature_algorithm_type(algorithm_string)
+        signature = value[12:(12+length_param)]
+        data = value[(12+ length_param):]
+        issuer_node_pub_key = self._load_issuer_node_dilithium_public_key()
+        signature_verifier = self.factory_verifier.get_verifier(algorithm_string)
+        is_verified = signature_verifier.verify(issuer_node_pub_key,signature,data)
+        return is_verified
+        
+    
+    
     def handle_update_verification(self,value,old_value,auth_signature):
         return self.handle_key_rotation(value,old_value,auth_signature)
     
+    
+    '''
+    def handle_issuer_node_update_verification(self,new_value,auth_signature):
+        algorithm_string = self.get_alg_string(new_value)
+        alg_param, length_param = self.handle_signature_algorithm_type(algorithm_string)
+        signature = new_value[12:(12+length_param)]
+        data = new_value[(12+ length_param)]
+        issuer_node_pub_key = self._load_issuer_node_dilithium_public_key()
+    '''    
     
     def handle_key_rotation(self,value,old_value,auth_signature):
         old_alg_string = self.get_alg_string(old_value)

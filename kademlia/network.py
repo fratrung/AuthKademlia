@@ -11,7 +11,7 @@ from kademlia.utils import digest
 from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
-from kademlia.crawling import NodeSpiderCrawl
+from kademlia.crawling import NodeSpiderCrawl 
 from kademlia.auth_handler import SignatureVerifierHandler
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -26,7 +26,7 @@ class Server:
 
     protocol_class = KademliaProtocol
 
-    def __init__(self,signature_verifier_handler: SignatureVerifierHandler, ksize=20, alpha=3, node_id=None, storage=None):
+    def __init__(self,signature_verifier_handler: SignatureVerifierHandler, ksize=25, alpha=5, node_id=None, storage=None):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -151,6 +151,56 @@ class Server:
         result = await self.protocol.ping(addr, self.node.id)
         return Node(result[1], addr[0], addr[1]) if result[0] else None
 
+
+    def _handle_type_signature_verification(self,key,value):
+        is_verified = False
+        if key == "did:iiot:status-list":
+            is_verified = self.signature_verifier_handler.handle_issuer_node_signature_verification(value)
+            print("\n[Log] Status List Signature Verified!\n")
+        else:
+            is_verified = self.signature_verifier_handler.handle_signature_verification(value)
+        return is_verified
+    
+    def _handle_type_update_verification(self,key, value, old_value, auth_signature):
+        is_authenticated_update = False
+        if key == "did:iiot:status-list" and auth_signature == None:
+            is_authenticated_update = self.signature_verifier_handler.handle_issuer_node_signature_verification(value)
+            print("Updating Status List (Authenticated)")
+        else:
+            print("Updating key-pair")
+            is_authenticated_update = self.signature_verifier_handler.handle_update_verification(value,old_value,auth_signature)
+        return is_authenticated_update
+    
+    async def get_fallback(self,key):
+        log.info("Looking up key %s", key)
+        dkey = digest(key)
+        
+        # if this node has it, return it
+        result_local = None
+        if self.storage.get(dkey) is not None:
+            result_local = self.storage.get(dkey)
+            is_verified = self._handle_type_signature_verification(key,result_local)
+            if not is_verified:
+                return None
+            #return self.storage.get(dkey)
+        node = Node(dkey)
+        nearest = self.protocol.router.find_neighbors(node,self.ksize)
+        if not nearest:
+            log.warning("There are no known neighbors to get key %s", key)
+            return None
+        spider = ValueSpiderCrawl(self.protocol, node, nearest,
+                                  self.ksize, self.alpha)
+        result = await spider.find()
+        if result is not None :
+            is_verified = self._handle_type_signature_verification(key,result)
+            if is_verified:
+                if result_local != result and result_local is not None: 
+                    print(f"Get fallback, aggiornato nell'hash table il valore corretto {result_local} con {result}")
+                    self.storage[dkey] = None
+                return result
+        return None
+    
+    
     async def get(self, key):
         """
         Get a key if the network has it.
@@ -160,10 +210,11 @@ class Server:
         """
         log.info("Looking up key %s", key)
         dkey = digest(key)
+        
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
             result = self.storage.get(dkey)
-            is_verified = self.signature_verifier_handler.handle_signature_verification(result) # for eventually injected fake record
+            is_verified = self._handle_type_signature_verification(key,result)
             if not is_verified:
                 return None
             return self.storage.get(dkey)
@@ -176,11 +227,10 @@ class Server:
                                   self.ksize, self.alpha)
         result = await spider.find()
         if result is not None :
-            is_verified = self.signature_verifier_handler.handle_signature_verification(result)
+            is_verified = self._handle_type_signature_verification(key,result)
             if is_verified:
                 return result
         return None
-        #return await spider.find()
     
     
     async def set(self, key, value):
@@ -188,12 +238,12 @@ class Server:
         Set the given string key to the given value in the network.
         """
         result = await self.get(key)
-        
+
         if result:
             log.error(f"record {key} already exists")
             return None
         
-        is_valid_signature = self.signature_verifier_handler.handle_signature_verification(value)
+        is_valid_signature = self._handle_type_signature_verification(key,value)
         
         if not is_valid_signature:
             log.error("Invalid Signature")
@@ -208,24 +258,26 @@ class Server:
         dkey = digest(key)
         return await self.set_digest(dkey, value)
 
+
+
     async def update(self,key,value,auth_signature):
         old_value = await self.get(key)
         if not old_value:
             log.error(f"record {key} does not exists")
             return None
         
-        is_authenticated_update = self.signature_verifier_handler.handle_update_verification(value,old_value,auth_signature)
+        is_authenticated_update = self._handle_type_update_verification(key,value,old_value,auth_signature)
         if not is_authenticated_update:
-            log.error("Unauthenticated update operation")
+            print("Unauthenticated update operation")
             return None
-        log.debug("\nAUTHENTICATED UPDATE!\n")
+        print("\nAUTHENTICATED UPDATE!\n")
         if not check_dht_value_type(value):
             raise TypeError(
                 "Value must be of type int, float, bool, str, or bytes"
             )
         log.info("setting '%s' = '%s' on network", key, value)
         dkey = digest(key)
-        return await self.update_digest(dkey, value,auth_signature)
+        return await self.update_digest(key, dkey, value, auth_signature)
     
     # DELETE API ---------------------------------------------------------------------------------------------------------------------
     async def delete(self, key, auth_signature, msg):
@@ -272,25 +324,7 @@ class Server:
         return any(await asyncio.gather(*results))
 
     # ---------------------------------------------------------------------------------------------------------------------------------------------------
-    
-    async def update_digest(self,dkey,value, auth_signature):
-        node = Node(dkey)
-        nearest = self.protocol.router.find_neighbors(node)
-        if not nearest:
-            log.warning("There are no known neighbors to set key %s",
-                        dkey.hex())
-            return False
-        
-        spider = NodeSpiderCrawl(self.protocol, node, nearest,
-                                 self.ksize, self.alpha)
-        nodes = await spider.find()
-        log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
-        biggest = max([n.distance_to(node) for n in nodes])
-        if self.node.distance_to(node) < biggest:
-            self.storage[dkey] = value
-        results = [self.protocol.call_update(n, dkey, value,auth_signature) for n in nodes]
-        # return true only if at least one update call succeeded
-        return any(await asyncio.gather(*results))
+   
         
         
     async def set_digest(self, dkey, value):
@@ -310,13 +344,34 @@ class Server:
         nodes = await spider.find()
         log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
 
-        # if this node is close too, then store here as well
         biggest = max([n.distance_to(node) for n in nodes])
         if self.node.distance_to(node) < biggest:
             self.storage[dkey] = value
         results = [self.protocol.call_store(n, dkey, value) for n in nodes]
-        # return true only if at least one store call succeeded
         return any(await asyncio.gather(*results))
+    
+    
+
+    async def update_digest(self,key, dkey, value, auth_signature):
+        node = Node(dkey)
+        nearest = self.protocol.router.find_neighbors(node)
+        print(f"Nodi nearest: {nearest}")
+        if not nearest:
+            print("[Debug] There are no neightbors nodes which contain the %s", key)
+            return None
+        spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
+        nodes = await spider.find() 
+        biggest = max([n.distance_to(node) for n in nodes])
+        if self.node.distance_to(node) < biggest:
+            self.storage[dkey] = value
+        if key == "did:iiot:status-list":
+            tasks = [ self.protocol.call_status_list_update(p, dkey, value)
+                    for p in nodes ]
+        else:
+            tasks = [ self.protocol.call_update(p, dkey, value, auth_signature)
+                    for p in nodes ]    
+        return any(await asyncio.gather(*tasks))
+
 
     def save_state(self, fname):
         """

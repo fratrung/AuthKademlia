@@ -43,36 +43,25 @@ class KademliaProtocol(RPCProtocol):
         self.welcome_if_new(source)
         return self.source_node.id
     
-    def rpc_update(self,sender,nodeid,key,value,auth_signature):
-        old_value = self.storage[key]
-        if not old_value:
-            log.error(f"Record {key} does not existsQ!")
-        is_authenticated_update = self.signature_verifier_handler.handle_update_verification(value,old_value,auth_signature)
         
-        if not is_authenticated_update:
-            log.error("Unauthenticated Update")
-            return False
-        
-        log.debug("AUTHENTICATED UPDATE")
-        source = Node(nodeid, sender[0], sender[1])
-        self.welcome_if_new(source)
-        log.debug("got a store request from %s, storing '%s'='%s'",
-                  sender, key.hex(), value)
-        self.storage[key] = value
-        return True
-    
     def rpc_store(self, sender, nodeid, key, value):
         
         result = self.storage.get(key)
         if result:
             log.error(f"record {key} already exists")
-            return 
-            
-        is_valid_signature = self.signature_verifier_handler.handle_signature_verification(value)
+            return False
+         
+        is_valid_signature = False 
+        if key == digest("did:iiot:status-list"):
+            is_valid_signature = self.signature_verifier_handler.handle_issuer_node_signature_verification(value)
+            print("[Log] Status List Signature Verified and Stored from near nodes!")
+        else:   
+            is_valid_signature = self.signature_verifier_handler.handle_signature_verification(value)
+        
         if not is_valid_signature:
             log.error("Invalid Signature")
             return False
-        print("\n\nSIGNATURE VERIFIED (protocol.py)\n\n")
+        print("\n\nSIGNATURE VERIFIED from near nodes\n\n")
         
         source = Node(nodeid, sender[0], sender[1])
         self.welcome_if_new(source)
@@ -81,6 +70,45 @@ class KademliaProtocol(RPCProtocol):
         self.storage[key] = value
         return True
     
+    def rpc_update(self,sender,nodeid,key,value,auth_signature):
+        old_value = self.storage.get(key)
+        if not old_value:
+            print(f"Record {key} does not exists! Store in local hash table")
+            return False
+        
+        is_authenticated_update = self.signature_verifier_handler.handle_update_verification(value,old_value,auth_signature)
+        
+        if not is_authenticated_update:
+            log.error("Unauthenticated DID Document Update")
+            return False
+        
+        print("Authenticated DID Document Update (rpc)")
+        source = Node(nodeid, sender[0], sender[1])
+        self.welcome_if_new(source)
+        log.debug("got a update request from %s, storing '%s'='%s'",
+                  sender, key.hex(), value)
+        self.storage[key] = value
+        return True
+    
+    def rpc_update_status_list(self, sender, nodeid, key, value):
+        result = self.storage.get(key)
+        if not result:
+            print(f"Record {key} does not exists! Store in local hash table")
+            return False
+        
+        is_authenticated_update = self.signature_verifier_handler.handle_issuer_node_signature_verification(value)
+        if not is_authenticated_update:
+            log.error("Unauthenticated Status list  Update")
+            return False
+        
+        print("Status List UPDATED (rpc)")
+        source = Node(nodeid, sender[0], sender[1])
+        self.welcome_if_new(source)
+        log.debug("got a update request from %s, storing '%s'='%s'",
+                  sender, key.hex(), value)
+        self.storage[key] = value
+        return True
+        
     def rpc_delete(self, sender, nodeid, key, auth_signature, delete_msg):
         
         value = self.storage.get(key)
@@ -145,6 +173,11 @@ class KademliaProtocol(RPCProtocol):
         result = await self.update(address,self.source_node.id,key,value,auth_signature)
         return self.handle_call_response(result, node_to_ask)
     
+    async def call_status_list_update(self,node_to_ask, key, value):
+        address = (node_to_ask.ip, node_to_ask.port)
+        result = await self.update_status_list(address,self.source_node.id,key,value)
+        return self.handle_call_response(result, node_to_ask)
+    
     async def call_delete(self, node_to_ask, key, auth_signature, delete_msg):
         address = (node_to_ask.ip, node_to_ask.port)
         result = await self.delete(address, self.source_node.id, key, auth_signature, delete_msg)
@@ -201,16 +234,9 @@ class KademliaProtocol(RPCProtocol):
         The receiver should remove this node from its routing table.
         """
         log.info(f"Node {nodeid.hex()} is leaving the network.")
-        
         # Remove the node from the local routing table
         source = Node(nodeid, sender[0], sender[1])
         self.router.remove_contact(source)
-        
-        # Optionally notify neighbors that this node is leaving (broadcasting leave)
-        #for neighbor in self.router.buckets:
-        #    for n in neighbor.get_nodes():
-        #        asyncio.ensure_future(self.call_leave(n, nodeid))
-
         return True
 
     def handle_call_leave_response(self, result, node):
