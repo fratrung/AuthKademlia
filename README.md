@@ -18,10 +18,6 @@ pip install git+https://github.com/fratrung/AuthKademlia
 This extended version of the Kademlia DHT adds native support for **signed records**, enabling the network to act as a **Verifiable Data Registry (VDR)** for **W3C Decentralized Identifiers (DIDs)**.
 
 Each stored value in the DHT can now be a **structured signed record**, composed as:
-## Usage
-*This assumes you have a working familiarity with [asyncio](https://docs.python.org/3/library/asyncio.html).*
-
-Assuming you want to connect to an existing network:
 ```
 algorithm + did document + signature
 ```
