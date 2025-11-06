@@ -118,11 +118,6 @@ async def run():
 asyncio.run(run())
 ```
 
-## Initializing a Network
-If you're starting a new network from scratch, just omit the `node.bootstrap` call in the example above.  Then, bootstrap other nodes by connecting to the first node you started.
-
-See the examples folder for a first node example that other nodes can bootstrap connect to and some code that gets and sets a key/value.
-
 ## Logging
 This library uses the standard [Python logging library](https://docs.python.org/3/library/logging.html).  To see debut output printed to STDOUT, for instance, use:
 
