@@ -15,7 +15,7 @@ pip install git+https://github.com/fratrung/AuthKademlia
 ```
 ## Signed Records and Verifiable Data Registry Support
 
-This extended version of the Kademlia DHT adds native support for **signed records**, enabling the network to act as a **Verifiable Data Registry (VDR)** for **W3C Decentralized Identifiers (DIDs)**.
+This extended version of the Kademlia DHT adds native support for **signed records**, enabling the network to act as a **Verifiable Data Registry (VDR)** for **Decentralized Identifiers (DIDs)**.
 
 Each stored value in the DHT can now be a **structured signed record**, composed as:
 ```
