@@ -78,7 +78,12 @@ async def run():
     # Initialize DHT node with signature verification
     node = Server(signature_verifier_handler=DIDSignatureVerifierHandler())
     await node.listen(5678)
-
+    
+    # Bootstrap to an existing DHT node
+    # Replace "127.0.0.1" and 5678 with a real bootstrap node address/port.
+    await node.bootstrap([("127.0.0.1", 5678)])
+    # NOTE: if this is the first node in the network, you can omit the bootstrap call
+    
     # Generate post-quantum key pairs
     dilith_mgr = DilithiumKeyManager("dilithium_keys")
     kyber_mgr = KyberKeyManager("kyber_keys")
